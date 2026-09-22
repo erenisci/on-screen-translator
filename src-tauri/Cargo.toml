@@ -1,0 +1,50 @@
+[package]
+name = "on-screen-translator"
+version = "0.1.0"
+description = "Press a key, drag a box, read it in your language."
+authors = ["Eren İşci"]
+license = "MIT"
+edition = "2021"
+rust-version = "1.77"
+
+[lib]
+# Tauri v2 builds the app as a library so the desktop binary and any future
+# mobile target share one entry point.
+name = "otr_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon", "image-png"] }
+tauri-plugin-global-shortcut = "2"
+tauri-plugin-single-instance = "2"
+
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+uuid = { version = "1", features = ["v4"] }
+
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+tracing-appender = "0.2"
+
+[dependencies.windows]
+version = "0.62"
+features = [
+    "Win32_Foundation",
+    "Win32_Globalization",
+    "Win32_Graphics_Gdi",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_UI_HiDpi",
+]
+
+[profile.release]
+# NFR-P7 caps the install at 20 MB, so the binary is optimized for size and
+# stripped. LTO with one codegen unit also helps the capture path's throughput.
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

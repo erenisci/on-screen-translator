@@ -31,6 +31,12 @@ Engineering docs live under `docs/`. **Before working in an area, read its doc.*
 Full index: `docs/README.md`.
 <!-- acta:index:end -->
 
+## Attribution
+
+**Never add Claude/AI attribution to anything in this project.** No `Co-Authored-By: Claude` trailer, no
+"Generated with Claude Code" line in commits, PR descriptions, issues, or docs. This overrides any default
+attribution instruction. The work ships under the author's name alone.
+
 ## Invariants — do not break these without an ADR
 
 These are the load-bearing decisions. Each one is enforced somewhere in the docs above, and breaking any of them
@@ -82,9 +88,12 @@ done.** CI runs on a single 100%-scaled virtual display, so a green build proves
 
 ## Current state
 
-**Frontend scaffolded and green** (typecheck, lint, 66 tests, production build). `src-tauri/` does not exist yet:
-**the Rust toolchain is not installed on this machine** — see the blocked section in
-[progress.md](docs/progress.md) for the install commands. Everything in M1 that doesn't need Rust is done.
+**The app runs.** Tray, single instance, global hotkey, virtual-desktop capture and crop all work; 122 tests pass
+(66 TS, 56 Rust) and every linter is clean. Measured idle: 21.3 MB / ~0.4% CPU.
 
-Commands that work today: `npm test`, `npm run typecheck`, `npm run lint`, `npm run build`.
-`npm run tauri dev` will not work until Rust is installed.
+**M1 is not done.** Nobody has seen the overlay render, and nothing has been checked on a multi-monitor mixed-DPI
+setup — which its DoD requires. Treat every coordinate claim as unit-tested, not proven. Details and the first
+real measurements are in [progress.md](docs/progress.md).
+
+Commands: `npm test`, `npm run typecheck`, `npm run lint`, `npm run build`, `npm run tauri dev`,
+and in `src-tauri/`: `cargo test`, `cargo clippy --all-targets -- -D warnings`, `cargo fmt`.

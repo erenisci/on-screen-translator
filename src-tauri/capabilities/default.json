@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Minimal surface: the three windows may call our own commands and nothing else. No filesystem, shell, or HTTP capability is granted to the webview (invariant 8).",
+  "windows": ["overlay", "panel", "settings"],
+  "permissions": ["core:default", "core:window:allow-set-focus", "core:event:default"]
+}

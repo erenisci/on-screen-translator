@@ -1,0 +1,40 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "on-screen-translator",
+  "version": "0.1.0",
+  "identifier": "dev.erenisci.on-screen-translator",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:5173",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "windows": [],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' otr: http://otr.localhost https://otr.localhost data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' ipc: http://ipc.localhost",
+      "assetProtocol": { "enable": false, "scope": [] }
+    },
+    "trayIcon": {
+      "id": "main",
+      "iconPath": "icons/icon.png",
+      "iconAsTemplate": false,
+      "menuOnLeftClick": false,
+      "tooltip": "on-screen-translator"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["msi", "nsis"],
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/icon.ico"],
+    "category": "Utility",
+    "shortDescription": "On-screen OCR and instant translation",
+    "longDescription": "Press a hotkey, drag a box around any text on screen, and read it in your own language. OCR runs locally; only the extracted text is sent to the translation provider you choose.",
+    "copyright": "Copyright (c) 2026 Eren İşci. MIT licensed.",
+    "windows": {
+      "webviewInstallMode": { "type": "downloadBootstrapper" },
+      "allowDowngrades": false
+    }
+  }
+}
