@@ -1,0 +1,73 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+src-tauri/target/
+src-tauri/gen/
+
+# Generated — regenerated from the Rust types on every build
+src/lib/types.gen.ts
+
+# ---------------------------------------------------------------------------
+# Secrets. Nothing here ever belongs in a public repository.
+# API keys live in Windows Credential Manager, never in a file
+# (docs/operations/security.md). These patterns are belt and braces.
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pfx
+*.p12
+*.pem
+*.key
+*.crt
+*.cer
+secrets.json
+secrets.*.json
+.claude/settings.local.json
+
+# Editor / IDE / OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.vs/
+*.user
+*.suo
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+
+# acta:gitignore:start
+# Sensitive doc areas stay local — a solo builder's pricing, margins, and legal
+# briefs shouldn't land in a public repo. Claude still reads them locally.
+docs/business/
+docs/legal/
+
+# The filled project brief: internal planning notes. Everything in it that the
+# public needs is already in docs/product/ (PRD, requirements, roadmap), so the
+# archive adds nothing outward and stays local.
+docs/_brief-archive/
+
+# Commented toggles — uncomment an area to keep it local instead of committed.
+# docs/product/
+# docs/project/
+# docs/architecture/
+# docs/engineering/
+# docs/quality/
+# docs/operations/
+# docs/design/
+
+# Local working scratchpad — never committed.
+SCRATCH.md
+
+# Personal drafting notes, not project documentation.
+TEMP.md
+# acta:gitignore:end

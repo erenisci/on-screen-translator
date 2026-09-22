@@ -1,0 +1,46 @@
+{
+  "name": "on-screen-translator",
+  "version": "0.1.0",
+  "description": "Press a key, drag a box, read it in your language. Windows tray OCR + translation.",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --max-warnings 0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2",
+    "react": "^19",
+    "react-dom": "^19"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9",
+    "@tailwindcss/vite": "^4",
+    "@tauri-apps/cli": "^2",
+    "@types/node": "^26.6.2",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^5",
+    "eslint": "^9",
+    "eslint-plugin-react-hooks": "^5",
+    "globals": "^16",
+    "prettier": "^3",
+    "tailwindcss": "^4",
+    "typescript": "^5.7",
+    "typescript-eslint": "^8",
+    "vite": "^7",
+    "vitest": "^3"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
+  }
+}

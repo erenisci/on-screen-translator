@@ -1,0 +1,42 @@
+# Changelog
+
+All notable changes to this project are documented here.
+Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: [SemVer](https://semver.org/).
+
+<!-- acta:track adds entries under [Unreleased], and promotes them to a version on release.
+     APPEND-LOG: never rewrite past versions. Newest on top. -->
+
+## [Unreleased]
+
+### Added
+
+- Project brief and the full documentation set (product, project, code, quality, ops).
+- ADR-0001..0004 — initial architecture, OCR engine, translation abstraction, and the capture/coordinate model.
+- Frontend scaffold: Vite 7 + React 19 + TypeScript (strict) + Tailwind v4, with one entry per window.
+- `coords.ts` — the single CSS↔physical conversion boundary, covered by 49 tests across a grid of scale factors
+  and virtual-desktop origins, including negative origins and mixed-DPI layouts.
+- `fitText.ts` — the shrink → wrap → clip fitting ladder for in-place translations, with an injectable text
+  measurer so it is testable without a DOM.
+- `ipc.ts` — the complete typed IPC surface, enforced by eslint as the only module allowed to call Tauri.
+- Capture overlay, in-place result layer, result panel, and settings window.
+- MIT LICENSE.
+
+### Changed
+
+- IPC contract gained `get_panel_result`, `close_panel`, and the `otr://result` event — the contract never said
+  how the result panel receives a result.
+- `docs/engineering/project-structure.md` corrected to the shape actually built (window HTML at the repo root,
+  Tailwind v4's CSS-first config, `types.ts` until `ts-rs` generation lands).
+
+### Fixed
+
+- `clampRectToBounds` now collapses both dimensions when rects overlap on only one axis. It previously returned
+  the surviving axis's size, which a caller could read as a real intersection.
+
+### Removed
+
+## [0.1.0] - 2026-09-10
+
+### Added
+
+- Initial project scaffold.

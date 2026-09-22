@@ -1,0 +1,45 @@
+@import 'tailwindcss';
+
+/* Design tokens. Deliberately few — three small windows, no design system yet. */
+@theme {
+  --color-scrim: rgb(0 0 0 / 0.45);
+  --color-selection: #38bdf8;
+  --font-ui: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  font-family: var(--font-ui);
+}
+
+/*
+ * The overlay is a transparent, always-on-top window covering the whole virtual
+ * desktop. Any scrollbar or bounce here would betray that it is a window.
+ */
+body {
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* The panel and settings windows are ordinary surfaces and follow the theme. */
+body.otr-surface {
+  background: white;
+  color: #18181b;
+}
+
+@media (prefers-color-scheme: dark) {
+  body.otr-surface {
+    background: #18181b;
+    color: #fafafa;
+  }
+}
+
+/* The panel's text is meant to be selected and copied. */
+.otr-selectable {
+  user-select: text;
+  -webkit-user-select: text;
+}

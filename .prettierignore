@@ -1,0 +1,10 @@
+dist/
+node_modules/
+src-tauri/target/
+src-tauri/gen/
+src/lib/types.gen.ts
+
+# Prettier's documented scope here is TS/TSX/CSS (docs/engineering/coding-standards.md).
+# Markdown is hand-formatted: the docs use deliberate table alignment that a
+# reflow would churn for no benefit.
+*.md
