@@ -1,10 +1,13 @@
-//! Orchestrates a capture: topology -> frame -> overlay, then crop -> OCR ->
-//! translate.
+//! Orchestrates a capture: topology -> frame -> overlay, then crop ->
+//! pre-process -> OCR -> translate.
 //!
-//! The second half stops at "crop" for now: OCR arrives in M2 and translation
-//! in M3 (docs/project/roadmap.md). Rather than fabricate a result, the crop
-//! succeeds — proving the coordinate model end to end — and the caller gets a
-//! typed "not implemented" error naming the milestone.
+//! The chain stops at OCR for now: translation arrives in M3
+//! (docs/project/roadmap.md). Rather than fabricate a translation, recognition
+//! runs for real and is cached on the session, and the caller gets a typed
+//! "not implemented" error naming the milestone.
+//!
+//! This module knows nothing about Tauri commands and nothing about the
+//! webview; that direction is one-way on purpose (project-structure.md).
 
 use std::time::Instant;
 
@@ -14,7 +17,10 @@ use uuid::Uuid;
 
 use crate::capture::{geometry::Rect, grab, monitors};
 use crate::error::{AppError, CaptureError};
+use crate::ocr::{self, OcrResult};
+use crate::preprocess::{self, Preprocessed};
 use crate::session::{Session, SessionStore};
+use crate::settings;
 use crate::windows_mgr;
 
 /// Start a capture: read the layout, grab one frame, open the overlay.
@@ -70,55 +76,102 @@ pub fn end_capture(app: &AppHandle, sessions: &SessionStore) {
     sessions.clear();
 }
 
-/// Crop the selection out of the frozen frame.
+/// Crop the selection out of the frozen frame and run the pre-processing
+/// ladder over it.
 ///
 /// The screen is NOT re-captured (invariant 3): this reads the buffer grabbed
 /// at hotkey time, which is what makes the freeze real and re-selection free.
-pub fn crop_selection(sessions: &SessionStore, selection: Rect) -> Result<(Rect, usize), AppError> {
+///
+/// Both steps happen while the session lock is held, and OCR deliberately does
+/// not: cropping and pre-processing are tens of milliseconds, recognition is
+/// hundreds, and holding the lock across it would block `Esc` from closing the
+/// overlay.
+pub fn crop_and_prepare(
+    sessions: &SessionStore,
+    selection: Rect,
+) -> Result<Preprocessed, AppError> {
     let started = Instant::now();
 
     let outcome = sessions.with(|session| {
         let cropped = session.frame.crop(&selection)?;
-        let bounds = cropped.bounds;
-        let bytes = cropped.pixels.len();
+        let prepared = preprocess::prepare(&cropped);
         session.last_crop = Some(cropped);
-        Ok::<_, CaptureError>((bounds, bytes))
+        Ok::<_, CaptureError>(prepared)
     });
 
     let Some(result) = outcome else {
         warn!("crop requested with no active session");
         return Err(CaptureError::NoSession.into());
     };
-
-    let (bounds, bytes) = result?;
+    let prepared = result?;
 
     info!(
         requested = ?selection,
-        cropped = ?bounds,
-        crop_bytes = bytes,
-        crop_ms = started.elapsed().as_millis(),
+        cropped = ?prepared.source,
+        image = ?(prepared.image.width, prepared.image.height),
+        steps = %prepared.steps_label(),
+        text_height_px = ?prepared.text_height_px,
+        prepare_ms = started.elapsed().as_millis(),
         "crop_complete"
     );
 
-    Ok((bounds, bytes))
+    Ok(prepared)
 }
 
-/// The full pipeline. M1 proves the capture and coordinate half; the rest is
-/// honest about not existing yet.
+/// Crop -> pre-process -> recognize. The M2 half of the pipeline.
+///
+/// The result is cached on the session so that re-translating into another
+/// language costs one request and no second OCR pass (FR-54).
+pub fn recognize_region(sessions: &SessionStore, selection: Rect) -> Result<OcrResult, AppError> {
+    let prepared = crop_and_prepare(sessions, selection)?;
+
+    // `None` means auto, which for this engine means the user's own profile
+    // languages — Windows OCR recognizes *with* a language, it does not detect
+    // one (ADR-0002).
+    let requested = settings::load().settings.source_language;
+
+    let started = Instant::now();
+    let engine = ocr::default_engine();
+    let result = ocr::recognize(&engine, &prepared, requested.as_deref())?;
+    let ocr_ms = started.elapsed().as_millis();
+
+    // Shapes only, never content (invariant 5): counts, languages and timings
+    // are what make a bad recognition diagnosable from a user's log without
+    // ever putting their screen in it.
+    info!(
+        engine = %result.engine,
+        requested_lang = ?requested,
+        source_lang = %result.source_lang,
+        lines = result.lines.len(),
+        blocks = result.block_count(),
+        chars = result.full_text.chars().count(),
+        ocr_ms,
+        "ocr_complete"
+    );
+
+    sessions.with(|session| session.last_ocr = Some(result.clone()));
+
+    Ok(result)
+}
+
+/// The full pipeline. M1 proves capture and coordinates, M2 adds recognition;
+/// the last leg is honest about not existing yet.
 pub fn translate_region(
     app: &AppHandle,
     sessions: &SessionStore,
     selection: Rect,
 ) -> Result<serde_json::Value, AppError> {
     let _ = app;
-    // Runs for real: a failure here is a genuine coordinate or capture bug and
-    // the caller should see it rather than a blanket "not implemented".
-    let (cropped, _bytes) = crop_selection(sessions, selection)?;
+    // Runs for real, and the result is cached on the session: when translation
+    // lands it reuses exactly this, and until then a failure here is a genuine
+    // capture, coordinate or OCR bug the caller should see rather than a
+    // blanket "not implemented".
+    let recognized = recognize_region(sessions, selection)?;
 
     warn!(
-        cropped = ?cropped,
-        "translate_region: crop succeeded, OCR not implemented (M2)"
+        lines = recognized.lines.len(),
+        "translate_region: recognition complete, translation not implemented (M3)"
     );
 
-    Err(AppError::not_implemented("Text recognition", "M2 (OCR)"))
+    Err(AppError::not_implemented("Translation", "M3 (translation)"))
 }

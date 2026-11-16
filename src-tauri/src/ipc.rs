@@ -79,6 +79,20 @@ pub fn translate_region(
     crate::pipeline::translate_region(&app, &sessions, rect)
 }
 
+/// OCR only — no translation, no network.
+///
+/// Separate from `translate_region` because the source text has a life of its
+/// own: it is what the overlay falls back to when a provider fails
+/// (invariant 9), and it is how recognition is exercised without a provider
+/// configured at all.
+#[tauri::command]
+pub fn recognize_region(
+    sessions: State<'_, SessionStore>,
+    rect: Rect,
+) -> CommandResult<crate::ocr::OcrResult> {
+    crate::pipeline::recognize_region(&sessions, rect)
+}
+
 #[tauri::command]
 pub fn retranslate(_target: String) -> CommandResult<serde_json::Value> {
     Err(AppError::not_implemented(
@@ -193,9 +207,14 @@ pub fn set_autostart(_enabled: bool) -> CommandResult<bool> {
 
 #[tauri::command]
 pub fn list_ocr_languages() -> CommandResult<Vec<String>> {
-    // Honest empty list rather than a fabricated one: Settings renders this as
-    // "no OCR language packs detected", which is true until M2.
-    Ok(Vec::new())
+    use crate::ocr::OcrEngine as _;
+
+    // An empty list is a real answer — Settings shows "no OCR language packs
+    // detected", which is a state FR-34 expects — but an engine failure is a
+    // different thing and must not masquerade as one.
+    crate::ocr::default_engine()
+        .available_languages()
+        .map_err(Into::into)
 }
 
 /* ----------------------------------------------------------- utility ---- */

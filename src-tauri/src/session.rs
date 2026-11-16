@@ -7,6 +7,7 @@
 use std::sync::{Arc, Mutex};
 
 use crate::capture::{BgraImage, Rect, Topology};
+use crate::ocr::OcrResult;
 
 /// One overlay session, from hotkey press to overlay close.
 pub struct Session {
@@ -16,6 +17,10 @@ pub struct Session {
     /// The most recent crop, served at `otr://crop/<id>` during development so
     /// the coordinate model can be eyeballed without writing a file.
     pub last_crop: Option<BgraImage>,
+    /// The most recent recognition. Kept so re-translating into another
+    /// language costs one request and no second OCR pass (FR-54), and so a
+    /// translation failure still has source text to fall back on (invariant 9).
+    pub last_ocr: Option<OcrResult>,
 }
 
 impl Session {
@@ -25,6 +30,7 @@ impl Session {
             topology,
             frame,
             last_crop: None,
+            last_ocr: None,
         }
     }
 

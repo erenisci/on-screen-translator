@@ -9,7 +9,9 @@ pub mod error;
 pub mod hotkey;
 pub mod ipc;
 pub mod logging;
+pub mod ocr;
 pub mod pipeline;
+pub mod preprocess;
 pub mod protocol;
 pub mod session;
 pub mod settings;
@@ -50,6 +52,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             ipc::get_capture_frame,
             ipc::translate_region,
+            ipc::recognize_region,
             ipc::retranslate,
             ipc::cancel_capture,
             ipc::close_overlay,

@@ -180,6 +180,58 @@ impl From<CaptureError> for AppError {
     }
 }
 
+/// The Windows language setting. The only external URL the OCR errors offer,
+/// and it is on the allowlist in `ipc::open_external` for that reason.
+const WINDOWS_LANGUAGE_SETTINGS: &str = "ms-settings:regionlanguage";
+
+impl From<crate::ocr::OcrError> for AppError {
+    fn from(err: crate::ocr::OcrError) -> Self {
+        use crate::ocr::OcrError;
+
+        match err {
+            // FR-34: the most likely OCR failure by far, and the one the user
+            // can actually fix — so it names the language and links to the
+            // place that installs it.
+            OcrError::LanguageUnavailable { requested } => AppError::new(
+                ErrorCode::OcrLangMissing,
+                format!("Windows can't recognize text in \"{requested}\" yet."),
+            )
+            .with_action(
+                "Install that language's text-recognition pack in Windows language settings, \
+                 then try again.",
+            )
+            .with_action_url(WINDOWS_LANGUAGE_SETTINGS),
+
+            OcrError::NoLanguages => AppError::new(
+                ErrorCode::OcrLangMissing,
+                "Windows has no text-recognition pack installed.",
+            )
+            .with_action(
+                "Add a language with optical character recognition in Windows language settings, \
+                 then try again.",
+            )
+            .with_action_url(WINDOWS_LANGUAGE_SETTINGS),
+
+            // FR-35: pointing at a blank area is normal use, not an error.
+            OcrError::NoText => AppError::no_text_found(),
+
+            OcrError::ImageTooLarge { width, height, max } => AppError::new(
+                ErrorCode::OcrFailed,
+                "That selection is too large to read in one pass.",
+            )
+            .with_action("Select a smaller area.")
+            .with_detail(format!("{width}x{height} exceeds the engine maximum {max}")),
+
+            other => AppError::new(
+                ErrorCode::OcrFailed,
+                "Couldn't read the text in that selection.",
+            )
+            .with_action("Try again, or drag a slightly larger box around the text.")
+            .with_detail(other.to_string()),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -239,5 +291,63 @@ mod tests {
         let err = AppError::capture_failed("BitBlt returned 0, GetLastError=5");
         assert!(!err.message.contains("BitBlt"));
         assert!(err.detail.unwrap().contains("BitBlt"));
+    }
+
+    #[test]
+    fn a_missing_language_pack_names_it_and_links_to_the_windows_setting() {
+        let err: AppError = crate::ocr::OcrError::LanguageUnavailable {
+            requested: "ja".into(),
+        }
+        .into();
+
+        assert_eq!(err.code, ErrorCode::OcrLangMissing);
+        assert!(err.message.contains("\"ja\""));
+        assert_eq!(err.action_url.as_deref(), Some(WINDOWS_LANGUAGE_SETTINGS));
+    }
+
+    #[test]
+    fn an_empty_recognition_is_the_quiet_no_text_message_not_an_ocr_failure() {
+        // FR-35: selecting a blank area is normal use. Reporting it as an
+        // engine failure would teach the user the tool is broken.
+        let err: AppError = crate::ocr::OcrError::NoText.into();
+        assert_eq!(err.code, ErrorCode::NoTextFound);
+        assert!(err.action.is_some());
+    }
+
+    #[test]
+    fn an_engine_failure_keeps_the_hresult_out_of_the_user_message() {
+        let err: AppError = crate::ocr::OcrError::Engine {
+            call: "RecognizeAsync",
+            detail: "The parameter is incorrect. (-2147024809)".into(),
+        }
+        .into();
+
+        assert_eq!(err.code, ErrorCode::OcrFailed);
+        assert!(!err.message.contains("RecognizeAsync"));
+        assert!(err.detail.unwrap().contains("RecognizeAsync"));
+    }
+
+    #[test]
+    fn every_ocr_error_tells_the_user_what_to_do() {
+        for err in [
+            crate::ocr::OcrError::NoLanguages,
+            crate::ocr::OcrError::NoText,
+            crate::ocr::OcrError::ImageTooLarge {
+                width: 20_000,
+                height: 9_000,
+                max: 10_000,
+            },
+            crate::ocr::OcrError::Engine {
+                call: "RecognizeAsync",
+                detail: "boom".into(),
+            },
+        ] {
+            let app: AppError = err.into();
+            assert!(
+                app.action.is_some(),
+                "user-facing error without an action: {}",
+                app.message
+            );
+        }
     }
 }

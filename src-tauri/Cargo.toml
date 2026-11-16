@@ -38,7 +38,22 @@ features = [
     "Win32_Graphics_Gdi",
     "Win32_UI_WindowsAndMessaging",
     "Win32_UI_HiDpi",
+    # WinRT, for Windows.Media.Ocr (ADR-0002). `Globalization` is the WinRT
+    # namespace and is NOT the same thing as `Win32_Globalization` above.
+    "Win32_System_Com",
+    "Foundation",
+    "Foundation_Collections",
+    "Globalization",
+    "Graphics_Imaging",
+    "Media_Ocr",
+    "Storage_Streams",
 ]
+
+[dev-dependencies]
+# The fixture tests render their own text with GDI instead of checking
+# screenshots into the repo: a binary fixture can't be reviewed in a diff, and
+# one rendered here matches the machine's own fonts and DPI.
+windows = { version = "0.62", features = ["Win32_Foundation", "Win32_Graphics_Gdi"] }
 
 [profile.release]
 # NFR-P7 caps the install at 20 MB, so the binary is optimized for size and
