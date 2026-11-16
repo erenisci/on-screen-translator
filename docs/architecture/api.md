@@ -2,7 +2,7 @@
 title: IPC Contract
 discipline: code
 status: active
-updated: 2026-09-10
+updated: 2026-11-16
 ---
 
 # IPC Contract
@@ -52,17 +52,29 @@ interface MonitorInfo {
 interface OcrLine {
   text: string;
   bbox: Rect;                       // frame coordinates
-  confidence: number;               // 0.0–1.0
-  blockId: number;                  // groups lines into paragraphs
+  confidence: number | null;        // 0.0–1.0, or null when the engine reports none
+  blockId: number;                  // groups lines into paragraphs, contiguous from 0
+}
+
+interface OcrResult {
+  lines: OcrLine[];
+  fullText: string;                 // blocks joined by a blank line, lines in a block by a space
+  sourceLang: LangTag;              // as the engine reports it, e.g. "en-US"
+  engine: string;                   // which engine produced this, for bug reports
 }
 
 interface TranslatedLine {
   bbox: Rect;
   source: string;
   translated: string;
-  confidence: number;               // carried from OCR
+  confidence: number | null;        // carried from OCR
 }
 ```
+
+**On `confidence: null`.** `Windows.Media.Ocr` exposes no confidence value at
+all, so every line from the v1 engine carries `null`. The UI must treat it as
+*unknown*, never as *low* — flagging every line on every capture would train
+the user to ignore the marker ([TD-09](../project/tech-debt.md)).
 
 ## Commands
 
@@ -72,6 +84,7 @@ interface TranslatedLine {
 | ------------------- | -------------------- | -------------------- | ----------------------------------------------------------------------- |
 | `get_capture_frame` | —                    | `CaptureFrameInfo`   | Metadata only. The pixels are fetched from `otr://frame`.                |
 | `translate_region`  | `{ rect: Rect }`     | `TranslateResult`    | The main pipeline call. Cancellable. Crops the existing frame.           |
+| `recognize_region`  | `{ rect: Rect }`     | `OcrResult`          | OCR only — no translation, no network. The source text the overlay falls back to when a provider fails (invariant 9). |
 | `retranslate`       | `{ target: LangTag }`| `TranslateResult`    | Reuses cached OCR text — no re-capture, no re-OCR ([FR-54](../product/requirements-functional.md#results)). |
 | `cancel_capture`    | —                    | `void`               | Tears down the session and drops the frame buffer.                       |
 | `close_overlay`     | —                    | `void`               | Destroys the overlay window; the panel survives.                         |

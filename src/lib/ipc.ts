@@ -17,6 +17,7 @@ import type {
   CaptureFrameInfo,
   ErrorCode,
   LangTag,
+  OcrResult,
   ProgressEvent,
   ProviderHealth,
   ProviderId,
@@ -85,6 +86,16 @@ export const getCaptureFrame = () => call<CaptureFrameInfo>('get_capture_frame')
  */
 export const translateRegion = (rect_physical: Rect) =>
   call<TranslateResult>('translate_region', { rect: rect_physical });
+
+/**
+ * OCR only — no translation and no network.
+ *
+ * The source text has a life of its own: it is what stays on screen when a
+ * provider fails (invariant 9), and it is what the app can show with no
+ * provider configured at all.
+ */
+export const recognizeRegion = (rect_physical: Rect) =>
+  call<OcrResult>('recognize_region', { rect: rect_physical });
 
 /** Re-translate the cached OCR text. No re-capture, no re-OCR (FR-54). */
 export const retranslate = (target: LangTag) => call<TranslateResult>('retranslate', { target });

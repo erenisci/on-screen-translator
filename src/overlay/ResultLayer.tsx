@@ -15,6 +15,15 @@ const FONT_FAMILY = "'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif
 const LOW_CONFIDENCE = 0.6;
 
 /**
+ * `null` means the engine reports no confidence at all (TD-08), which is the
+ * normal case for the Windows engine. Unknown is NOT low: flagging every line
+ * on every capture would train the user to ignore the marker, which is exactly
+ * what makes it useless on the day it means something.
+ */
+const isLowConfidence = (confidence: number | null): boolean =>
+  confidence !== null && confidence < LOW_CONFIDENCE;
+
+/**
  * The headline feature (F7): translated text drawn over the original blocks.
  *
  * Every box is positioned from the OCR bbox, converted once through
@@ -74,14 +83,14 @@ export function ResultLayer({ lines, view }: ResultLayerProps) {
             fontFamily: FONT_FAMILY,
             fontWeight: 500,
           }}
-          title={fit.clipped || line.confidence < LOW_CONFIDENCE ? line.translated : undefined}
+          title={fit.clipped || isLowConfidence(line.confidence) ? line.translated : undefined}
         >
           {fit.lines.map((text, lineIndex) => (
             <div key={lineIndex} className="whitespace-pre">
               {text}
             </div>
           ))}
-          {line.confidence < LOW_CONFIDENCE ? (
+          {isLowConfidence(line.confidence) ? (
             <span
               className="absolute right-0 top-0 h-1.5 w-1.5 rounded-full bg-amber-500"
               aria-label="low confidence"

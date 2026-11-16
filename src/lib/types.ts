@@ -53,17 +53,38 @@ export interface OcrLine {
   text: string;
   /** Frame coordinates: physical pixels, virtual-desktop space. */
   bbox: Rect;
-  /** 0.0 - 1.0 */
-  confidence: number;
-  /** Groups lines into paragraphs. */
+  /**
+   * 0.0 - 1.0, or `null` when the engine does not report one.
+   *
+   * `Windows.Media.Ocr` reports no confidence at all, so every line from the
+   * v1 engine carries `null`. Treat it as "unknown", never as "low" — see
+   * docs/project/tech-debt.md TD-09.
+   */
+  confidence: number | null;
+  /** Groups lines into paragraphs. Contiguous, starting at 0. */
   blockId: number;
+}
+
+/** What `recognize_region` returns: OCR only, no translation. */
+export interface OcrResult {
+  lines: OcrLine[];
+  /**
+   * Lines joined into paragraphs — blocks separated by a blank line, lines
+   * within a block joined with a space. This is what gets translated.
+   */
+  fullText: string;
+  /** BCP-47 as the engine reports it, e.g. "en-US". */
+  sourceLang: LangTag;
+  /** Which engine produced this, for bug reports. */
+  engine: string;
 }
 
 export interface TranslatedLine {
   bbox: Rect;
   source: string;
   translated: string;
-  confidence: number;
+  /** Carried through from the OCR line; `null` when the engine reports none. */
+  confidence: number | null;
 }
 
 export interface TranslateResult {
