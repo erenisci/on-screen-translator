@@ -2,7 +2,7 @@
 title: System Design
 discipline: code
 status: active
-updated: 2026-09-10
+updated: 2026-11-16
 ---
 
 # System Design
@@ -54,17 +54,21 @@ translation on screen while re-selecting.
 
 Where the 1s goes, and what each stage is allowed:
 
-| Stage                        | Budget   | How it's kept                                                        |
-| ---------------------------- | -------- | ---------------------------------------------------------------------- |
-| Hotkey → frame captured       | ~80 ms   | One GPU-assisted grab of the virtual desktop                          |
-| Frame → overlay visible       | ~150 ms  | Frame served via custom protocol, not base64 IPC                      |
-| Crop + preprocess             | ~30 ms   | In-memory crop; preprocessing skipped when the region is already clean |
-| OCR                           | ~150 ms  | OS engine on a region, not a full screen                              |
-| Translate (network)           | ~400 ms  | **One** request per capture; dominated by provider round trip         |
-| Render in-place result        | ~50 ms   | Plain DOM positioning; no layout thrash                               |
+| Stage                        | Budget   | Measured            | How it's kept                                                        |
+| ---------------------------- | -------- | --------------------- | ---------------------------------------------------------------------- |
+| Hotkey → frame captured       | ~80 ms   | **183 ms** at 1080p  | One grab of the virtual desktop — **over budget**, see progress.md    |
+| Frame → overlay visible       | ~150 ms  | not measured         | Frame served via custom protocol, not base64 IPC                      |
+| Crop + preprocess             | ~30 ms   | 2–22 ms              | In-memory crop; preprocessing skipped when the region is already clean |
+| OCR                           | ~150 ms  | 6–10 ms              | OS engine on a region, not a full screen                              |
+| Translate (network)           | ~400 ms  | not built            | **One** request per capture; dominated by provider round trip         |
+| Render in-place result        | ~50 ms   | not measured         | Plain DOM positioning; no layout thrash                               |
 
-Translation is the only stage we don't control, which is why it gets the largest share and why batching
-([ADR-0003](adr/0003-translation-provider-abstraction.md)) matters more than any micro-optimization elsewhere.
+Measured figures are debug builds on a single 1920×1080 display, crops 300–520 px wide; the OCR numbers come from
+the fixture suite, which prints them on every run. Translation is the only stage we don't control, which is why it
+gets the largest share and why batching ([ADR-0003](adr/0003-translation-provider-abstraction.md)) matters more
+than any micro-optimization elsewhere — and the two stages that *are* ours and are now measured come in at roughly
+a tenth of their budget, which is where the capture stage's overrun will have to be paid from if it can't be fixed
+directly.
 
 ## Components
 

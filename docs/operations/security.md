@@ -2,7 +2,7 @@
 title: Security Guidelines
 discipline: ops
 status: active
-updated: 2026-09-10
+updated: 2026-11-16
 ---
 
 # Security Guidelines
@@ -68,7 +68,8 @@ There is no account, no session, no server, and no multi-user model. The only cr
 **Two rules make this table true:**
 
 1. **No capture path writes to disk.** Not for caching, not for debugging, not temporarily. If you need a fixture,
-   use `src-tauri/fixtures/`, not a runtime dump.
+   render one in the test ([ADR-0005](../architecture/adr/0005-ocr-test-fixtures-are-rendered.md)), never a
+   runtime dump of a real screen.
 2. **No log line contains captured content.** Log *shapes* — line counts, character counts, durations — never text.
    See [logging.md](logging.md).
 

@@ -2,7 +2,7 @@
 title: Execution Roadmap
 discipline: project
 status: active
-updated: 2026-09-10
+updated: 2026-11-16
 ---
 
 # Execution Roadmap
@@ -33,7 +33,10 @@ builds a walking skeleton straight through the riskiest path, and the polish com
 **Done when** — a box drawn on a 150%-scaled monitor produces a crop containing exactly what was inside it, and the
 same holds on a 100% secondary monitor and across the boundary between them.
 
-**Status** — `not started`
+**Status** — `code complete, not done`. Everything in scope is built and passing; the overlay has never been seen
+rendering, and **nothing has been checked on a multi-monitor mixed-DPI setup**, which is the entire "done when"
+above. Until that happens every coordinate claim in this project is unit-tested, not proven
+([definition-of-done.md](definition-of-done.md)).
 
 ---
 
@@ -46,14 +49,20 @@ same holds on a 100% secondary monitor and across the boundary between them.
 - `OcrEngine` trait + `Windows.Media.Ocr` implementation (FR-32, NFR-M1)
 - Pre-processing ladder: upscale, grayscale, contrast normalize, adaptive threshold (FR-31)
 - Line assembly into blocks with `full_text` preserving paragraph structure
-- Source language detection; installed-language-pack detection with an actionable message (FR-33, FR-34)
+- Source language resolution; installed-language-pack detection with an actionable message (FR-33, FR-34)
 - Empty-result handling (FR-35)
 
-**Done when** — a fixture set of real screenshots (small UI text, low contrast, monospace, a paragraph of prose)
-recognizes correctly, with bounding boxes that land on the right lines.
+**Done when** — a fixture set (small UI text, low contrast, monospace, a paragraph of prose) recognizes correctly,
+with bounding boxes that land on the right lines.
 
 **Depends on** — M1.
-**Status** — `not started`
+
+**Status** — `done` (2026-11-16). Six fixtures pass against the real engine, with boxes asserted against measured
+ink at a negative virtual origin. Three things came out different from the plan and are carried as debt rather than
+left unsaid: the engine reports no confidence ([TD-09](tech-debt.md)); it selects a recognizer rather than
+detecting a language ([TD-10](tech-debt.md)); and the pre-processing ladder shows no measured accuracy gain on
+these fixtures, which are rendered rather than captured
+([TD-11](tech-debt.md), [ADR-0005](../architecture/adr/0005-ocr-test-fixtures-are-rendered.md)).
 
 ---
 
@@ -85,7 +94,9 @@ pulling the network still leaves the OCR text on screen and copyable.
 **Scope**
 
 - Translated lines drawn at their source bounding boxes inside the overlay (FR-50)
-- The fitting ladder: shrink → wrap → clip-with-hover, with a legibility floor (FR-51, NFR-U8)
+- The fitting ladder: shrink → wrap → clip-with-hover, with a legibility floor (FR-51, NFR-U8). Its two magic
+  numbers — box growth capped at 3× the source height, colliding boxes nudged downward — were chosen on paper and
+  need revisiting against real captures.
 - Re-select without re-triggering the hotkey (FR-26)
 - Result panel: frameless, always-on-top, copy source / copy translation (FR-52, FR-53)
 - Re-translate from cached OCR text (FR-54); display mode setting (FR-55)
@@ -126,7 +137,9 @@ pulling the network still leaves the OCR text on screen and copyable.
 - Error taxonomy wired through the whole pipeline ([../operations/error-handling.md](../operations/error-handling.md))
 - Logging with the no-content rule enforced ([../operations/logging.md](../operations/logging.md))
 - Test suite per [../quality/testing-strategy.md](../quality/testing-strategy.md): fixture-image OCR tests, fake-provider pipeline tests, coordinate-math unit tests
-- Display topology change handling (NFR-R4); no invisible-overlay lockup path (NFR-R1)
+- Display topology change handling (NFR-R4); no invisible-overlay lockup path (NFR-R1). Known gap:
+  `windows_mgr::open_overlay` reuses a surviving overlay window without resizing it to the *current* virtual
+  bounds — harmless while the hotkey is a no-op during a session, wrong the moment that changes.
 
 **Done when** — measured numbers are recorded in this repo and meet the targets, and the QA checklist passes.
 

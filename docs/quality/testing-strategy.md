@@ -2,7 +2,7 @@
 title: Testing Strategy
 discipline: quality
 status: active
-updated: 2026-09-10
+updated: 2026-11-16
 ---
 
 # Testing Strategy
@@ -79,23 +79,37 @@ That was a design goal, not a side effect.
 - **One request per capture**: assert the fake provider was called exactly once, whatever the line count
   ([FR-42](../product/requirements-functional.md#translation)).
 
-### OCR accuracy — fixtures, measured not asserted
+### OCR accuracy — fixtures rendered at test time
 
-A committed fixture set of real screenshots in `src-tauri/fixtures/`, each with expected text:
+`src-tauri/tests/ocr_fixtures.rs` draws its own text with GDI and runs the real
+crop → pre-process → recognize path over it. Nothing binary is committed — the reasoning, and what it costs us, is
+in [ADR-0005](../architecture/adr/0005-ocr-test-fixtures-are-rendered.md).
 
-| Fixture class      | Why it's there                                            |
-| ------------------ | ----------------------------------------------------------- |
-| Small UI text      | 11–13 px — the most common real case and the hardest        |
-| Low contrast       | Grey-on-grey dialogs                                        |
-| Monospace / code   | Error messages and stack traces                             |
-| Prose paragraph    | The multi-line assembly case                                |
-| Dark mode          | Light-on-dark inverts the pre-processing assumptions        |
-| High-DPI rendering | Should be the easy case; proves nothing regressed           |
-| Game-style UI      | Stylized fonts, textured backgrounds — the known weak spot  |
+| Fixture class      | Why it's there                                            | State                     |
+| ------------------ | ----------------------------------------------------------- | --------------------------- |
+| Prose paragraph    | The multi-line assembly case                                | Covered                     |
+| Small UI text      | 8 and 11 px — the most common real case and the hardest     | Covered                     |
+| Low contrast       | Grey-on-grey dialogs                                        | Covered                     |
+| Monospace / dark   | Error messages and stack traces in a dark editor            | Covered                     |
+| Blank region       | Selecting empty space is normal use (FR-35)                 | Covered                     |
+| Compressed / scaled | Resampling blur and subpixel fringing — the case the pre-processing ladder exists for | **Missing** ([TD-11](../project/tech-debt.md)) |
+| Game-style UI      | Stylized fonts, textured backgrounds — the known weak spot  | Missing                     |
 
-These are a **benchmark, not a pass/fail gate**: they report a character-accuracy score per fixture. A
-pre-processing change that raises one class and drops another is exactly the trade this suite exists to make
-visible. Treat a drop as a finding to explain, not automatically a failure.
+Three rules keep this suite honest:
+
+- **Every fixture sits at a negative virtual origin**, and each test measures the rendered ink from the buffer and
+  asserts the returned boxes land inside it. The bounding-box claim is checked against where the glyphs actually
+  are, not against a transcribed guess.
+- **Assertions are floors, not transcriptions** — "at least N words", "never worse than without the ladder".
+  Fonts, DPI and installed language packs differ per machine, and an exact-match assertion would be a flake
+  generator that teaches people to ignore the suite.
+- **Accuracy is reported, not asserted.** Each run prints words matched and stage timings. A pre-processing change
+  that raises one class and drops another is exactly the trade this suite exists to make visible; treat a drop as a
+  finding to explain, not automatically a failure.
+
+On a machine with no OCR language pack the tests report and skip — that configuration is one
+[FR-34](../product/requirements-functional.md#ocr) supports, so it must not fail the build. The flip side is that a
+green run on such a machine proves nothing about OCR.
 
 ### Manual — the GUI loop
 
@@ -125,7 +139,7 @@ If any of these becomes a source of repeated bugs, revisit — but don't add the
 | Rust async    | `tokio::test`                                                       |
 | Rust fakes    | Hand-written trait implementations — no mocking framework needed    |
 | TS unit       | Vitest                                                              |
-| Fixtures      | Committed PNGs + expected-text files in `src-tauri/fixtures/`       |
+| Fixtures      | Rendered at test time with GDI ([ADR-0005](../architecture/adr/0005-ocr-test-fixtures-are-rendered.md)) |
 | CI            | GitHub Actions on `windows-latest` ([../operations/ci-cd.md](../operations/ci-cd.md)) |
 
 Hand-written fakes over a mocking framework: with two traits and a handful of scenarios, a fake is shorter, clearer,

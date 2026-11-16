@@ -63,6 +63,8 @@ correctly, which is invisible on a machine already set to the author's language.
 - [ ] **Environment 2:** a selection crossing the monitor boundary works
 - [ ] A monitor left of the primary (negative origin) works
 - [ ] Dim scrim covers everything outside the selection; inside is at full brightness
+- [ ] **Environment 2:** the scrim still covers the *whole* virtual desktop on a very wide layout — it is drawn
+      with a fixed 99999 px outset shadow, which is an assumption, not a measurement
 - [ ] Live size readout matches the region actually processed, and flips near screen edges
 - [ ] `Esc` cancels and returns focus to the previously active window
 - [ ] Right-click cancels
@@ -73,14 +75,16 @@ correctly, which is invisible on a machine already set to the author's language.
 ## OCR
 
 - [ ] Ordinary paragraph text recognizes accurately
-- [ ] Small UI text (11–13 px) recognizes acceptably
+- [ ] Small UI text (11–13 px) recognizes acceptably — 8 px is known not to work at all ([TD-01](../project/tech-debt.md))
 - [ ] Low-contrast text recognizes acceptably
 - [ ] Dark-mode (light-on-dark) text recognizes acceptably
 - [ ] Monospace / code recognizes acceptably
 - [ ] Selecting a blank area reports "no text found" and **keeps the overlay open**
 - [ ] A language whose pack isn't installed gives an actionable message + a link to Windows settings
-- [ ] Detected source language is correct and shown in the panel
-- [ ] Low-confidence results are visibly flagged, not presented as certain
+- [ ] The source language actually used is correct and shown in the panel (recognizer selection, not detection —
+      [TD-10](../project/tech-debt.md))
+- [ ] Low-confidence results are visibly flagged, not presented as certain — **N/A for the v1 engine**, which
+      reports no confidence at all ([TD-09](../project/tech-debt.md)). Check instead that nothing is flagged.
 
 ## Translation
 

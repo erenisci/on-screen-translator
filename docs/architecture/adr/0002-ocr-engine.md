@@ -111,3 +111,19 @@ The trait is the escape hatch, and it's deliberately narrow so it stays cheap to
 missing languages, or an ONNX model for CJK, means an implementation plus a Settings entry — no downstream change.
 If OCR ever needs to run per-frame rather than per-capture (live mode), this decision needs revisiting: an engine
 choice tuned for one 200 ms call is not automatically right for 10 calls a second.
+
+## Addendum — what implementing it revealed (2026-11-16)
+
+The decision stands; two assumptions in the Context above did not. Recorded here rather than edited into the
+reasoning, because what we believed at the time is the point of this file.
+
+- **The engine reports no confidence.** The trait sketch above has `OcrResult` carrying a `confidence` per line.
+  `Windows.Media.Ocr` exposes none at all, per line or per word, so the field is nullable across the whole contract
+  and is always `null` for this engine → [TD-09](../../project/tech-debt.md).
+- **The engine does not detect language, it reads *with* one.** `TryCreateFromLanguage` / 
+  `TryCreateFromUserProfileLanguages` select a recognizer; there is no "what language is this" call. What the app
+  reports as the detected source language is therefore which recognizer ran → [TD-10](../../project/tech-debt.md).
+
+Two details that proved decisive in implementation, kept here so they aren't rediscovered: the engine **refuses
+images under 40×40 px** (a one-line selection has to be padded, right and bottom only so box origins survive), and
+WinRT puts `BoundingRect` on **words**, not lines — a line box is the union of its words'.

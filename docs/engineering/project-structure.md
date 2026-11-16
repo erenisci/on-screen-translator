@@ -2,7 +2,7 @@
 title: Project Structure
 discipline: code
 status: active
-updated: 2026-09-10
+updated: 2026-11-16
 ---
 
 # Project Structure
@@ -10,8 +10,9 @@ updated: 2026-09-10
 > **Purpose.** Where everything lives and why, so new code lands in the right place without asking.
 > **Related.** [../architecture/overview.md](../architecture/overview.md) · [coding-standards.md](coding-standards.md) · [naming-conventions.md](naming-conventions.md)
 
-> **Status:** the frontend half is **scaffolded and building**; `src-tauri/` does not exist yet. Lines marked
-> `[planned]` are the target shape for [M1–M5](../project/roadmap.md).
+> **Status:** both halves exist and build. Lines marked `[planned]` are the target shape for the milestones that
+> haven't landed yet — today that is `translate/`, `secrets.rs` and `autostart.rs`
+> ([M3–M5](../project/roadmap.md)).
 
 ## Layout
 
@@ -37,10 +38,12 @@ on-screen-translator/
 │  │                             #   lands with the Rust types, then becomes types.gen.ts
 │  └─ styles/                    #   index.css — Tailwind v4 (@import, no JS config file)
 │
-├─ src-tauri/                    # [planned] Rust core — everything expensive
+├─ src-tauri/                    # Rust core — everything expensive
 │  ├─ src/
 │  │  ├─ main.rs                 #   Bootstrap only. No logic.
-│  │  ├─ app.rs                  #   Single-instance guard, window lifecycle, shutdown
+│  │  ├─ lib.rs                  #   Builder wiring: plugins, state, commands, setup, exit
+│  │  ├─ windows_mgr.rs          #   Overlay / panel / settings window lifecycle
+│  │  ├─ session.rs              #   The live capture session: frame, crop, OCR result (memory only)
 │  │  ├─ tray.rs                 #   Tray icon, menu, state badges
 │  │  ├─ hotkey.rs               #   Global shortcut register / rebind / conflicts
 │  │  ├─ capture/
@@ -53,7 +56,7 @@ on-screen-translator/
 │  │  │  ├─ mod.rs               #   `OcrEngine` trait + line assembly
 │  │  │  ├─ windows_ocr.rs       #   Windows.Media.Ocr implementation           [WINDOWS]
 │  │  │  └─ assemble.rs          #   Lines → blocks → segments. Pure, tested.
-│  │  ├─ translate/
+│  │  ├─ translate/              #   [planned — M3]
 │  │  │  ├─ mod.rs               #   `TranslationProvider` trait + batching
 │  │  │  ├─ libretranslate.rs
 │  │  │  ├─ deepl.rs
@@ -61,14 +64,14 @@ on-screen-translator/
 │  │  │  └─ llm.rs               #   Any OpenAI-compatible endpoint
 │  │  ├─ pipeline.rs             #   crop → preprocess → ocr → translate; cancellation, timings
 │  │  ├─ settings.rs             #   JSON load/save, defaults, migration, corrupt recovery
-│  │  ├─ secrets.rs              #   Credential Manager. The ONLY module touching keys. [WINDOWS]
-│  │  ├─ autostart.rs            #   HKCU run entry                             [WINDOWS]
+│  │  ├─ secrets.rs              #   [planned — M3] Credential Manager. The ONLY module touching keys. [WINDOWS]
+│  │  ├─ autostart.rs            #   [planned — M5] HKCU run entry              [WINDOWS]
 │  │  ├─ protocol.rs             #   otr:// frame handler
 │  │  ├─ ipc.rs                  #   Tauri commands + events — the api.md contract
 │  │  ├─ error.rs                #   AppError, ErrorCode, user-facing messages
 │  │  └─ logging.rs              #   tracing setup + the no-content rule
-│  ├─ tests/                     #   Integration tests (fake provider, fixture images)
-│  ├─ fixtures/                  #   Test screenshots: small text, low contrast, monospace, prose
+│  ├─ tests/                     #   Integration tests. OCR fixtures are RENDERED here,
+│  │                             #   not committed as images (ADR-0005)
 │  ├─ icons/
 │  ├─ Cargo.toml
 │  └─ tauri.conf.json            #   Version source of truth; window defs; CSP

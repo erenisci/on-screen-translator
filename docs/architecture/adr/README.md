@@ -12,6 +12,7 @@ Claude session) should be able to tell whether a decision still holds without re
 | [0002](0002-ocr-engine.md)                       | OCR via `Windows.Media.Ocr` behind an engine trait          | Accepted | 2026-09-10 |
 | [0003](0003-translation-provider-abstraction.md) | Pluggable translation providers, user keys, batched request | Accepted | 2026-09-10 |
 | [0004](0004-capture-and-coordinate-model.md)     | Capture once into virtual-desktop physical pixels           | Accepted | 2026-09-10 |
+| [0005](0005-ocr-test-fixtures-are-rendered.md)   | OCR test fixtures are rendered, not committed               | Accepted | 2026-11-16 |
 
 ## Conventions
 

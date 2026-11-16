@@ -2,7 +2,7 @@
 title: Functional Requirements
 discipline: product
 status: active
-updated: 2026-09-10
+updated: 2026-11-16
 ---
 
 # Functional Requirements
@@ -52,9 +52,9 @@ IDs are stable; never renumber. Behaviour detail lives in [feature-specs.md](fea
 | ID    | Requirement                                                                                                        | Pri | Acceptance                                                                              |
 | ----- | ------------------------------------------------------------------------------------------------------------------ | --- | ----------------------------------------------------------------------------------------- |
 | FR-30 | The selected region is cropped from the already-captured frame — the screen is **not** re-captured.                  | P0  | No second capture call in a trace; result reflects the frozen frame, not live screen.      |
-| FR-31 | Before OCR, the crop is pre-processed: upscale small regions, convert to grayscale, normalize contrast.              | P0  | Small (< 20 px tall) text yields materially better recognition with pre-processing on.     |
-| FR-32 | OCR returns, per recognized line: text, a bounding box in frame coordinates, and a confidence value.                 | P0  | The overlay can position translated lines from the returned boxes.                         |
-| FR-33 | The source language is detected automatically; the user may override it in Settings.                                | P0  | Detected language is shown in the result panel.                                            |
+| FR-31 | Before OCR, the crop is pre-processed: upscale small regions, convert to grayscale, normalize contrast.              | P0  | Small (< 20 px tall) text is recognized **no worse** with pre-processing on. The stronger claim — materially better — is not yet demonstrated by any fixture ([TD-11](../project/tech-debt.md)). |
+| FR-32 | OCR returns, per recognized line: text, a bounding box in frame coordinates, and a confidence value **when the engine provides one**. | P0  | The overlay can position translated lines from the returned boxes. `Windows.Media.Ocr` provides no confidence, so v1 reports `null` ([TD-09](../project/tech-debt.md)). |
+| FR-33 | The source language is resolved automatically from the languages the machine is set up for; the user may override it in Settings. | P0  | The language actually used is shown in the result panel. This is recognizer selection, not text detection — see [TD-10](../project/tech-debt.md). |
 | FR-34 | If the required OCR language pack is not installed, the app says so and links to the Windows setting — it does not fail silently. | P0 | Actionable message, not a generic error.                                        |
 | FR-35 | If no text is found, the user is told plainly and stays in the overlay to re-select.                                | P0  | Empty selection on a blank area shows "no text found", overlay stays open.                 |
 

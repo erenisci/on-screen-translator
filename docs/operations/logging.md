@@ -2,7 +2,7 @@
 title: Logging Strategy
 discipline: ops
 status: active
-updated: 2026-09-10
+updated: 2026-11-16
 ---
 
 # Logging Strategy
@@ -74,7 +74,7 @@ almost anything:
   "ts": "2026-09-10T14:22:31Z", "level": "INFO", "target": "otr::pipeline",
   "event": "capture_complete",
   "region_px": "820x240", "monitors": 2, "scale_factors": [1.5, 1.0],
-  "ocr_lines": 12, "ocr_chars": 847, "mean_confidence": 0.94,
+  "ocr_lines": 12, "ocr_chars": 847,
   "source_lang": "en", "target_lang": "tr", "provider": "deepl",
   "alignment_ok": true,
   "capture_ms": 78, "ocr_ms": 143, "translate_ms": 412, "total_ms": 651
@@ -84,6 +84,18 @@ almost anything:
 Region size, monitor count, and scale factors are there deliberately: the project's worst bug class is coordinate
 handling on mixed-DPI setups ([ADR-0004](../architecture/adr/0004-capture-and-coordinate-model.md)), and those three
 fields are what make a user's report diagnosable without asking them to describe their monitor layout.
+
+**What exists today**, until translation lands and the single summary line above can be emitted:
+
+| Event             | Emitted by                | Carries                                                                       |
+| ----------------- | ------------------------- | ------------------------------------------------------------------------------- |
+| `capture_started` | `pipeline::begin_capture` | monitors, scale factors, mixed-DPI flag, virtual bounds, frame bytes, timings  |
+| `crop_complete`   | `pipeline::crop_and_prepare` | requested and cropped rects, processed image size, pre-processing steps applied, estimated text height, timing |
+| `ocr_complete`    | `pipeline::recognize_region` | engine, requested and resolved language, line count, block count, character count, timing |
+
+There is deliberately **no confidence field**: the v1 engine reports none, and a fabricated one in a log is a
+fabricated one in a bug report ([TD-09](../project/tech-debt.md)). The character *count* is a shape, not content —
+the rule below still holds absolutely.
 
 ## What to Log
 

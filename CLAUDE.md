@@ -88,12 +88,17 @@ done.** CI runs on a single 100%-scaled virtual display, so a green build proves
 
 ## Current state
 
-**The app runs.** Tray, single instance, global hotkey, virtual-desktop capture and crop all work; 122 tests pass
-(66 TS, 56 Rust) and every linter is clean. Measured idle: 21.3 MB / ~0.4% CPU.
+**The pipeline reads.** Hotkey → frozen frame → drag → crop → pre-process → recognized text, with boxes in
+virtual-desktop space. 173 tests pass (66 TS, 107 Rust — six against the real OCR engine) and every linter is
+clean. Measured idle: 21.3 MB / ~0.4% CPU; pre-process 2–22 ms, OCR 6–10 ms.
 
-**M1 is not done.** Nobody has seen the overlay render, and nothing has been checked on a multi-monitor mixed-DPI
-setup — which its DoD requires. Treat every coordinate claim as unit-tested, not proven. Details and the first
-real measurements are in [progress.md](docs/progress.md).
+**M2 is done. M1 is not.** Nobody has seen the overlay render, and nothing has been checked on a multi-monitor
+mixed-DPI setup — which its DoD requires. Treat every coordinate claim as unit-tested, not proven.
+
+**Three things came out different from the plan in M2**, and the docs now say so rather than the plan: the engine
+reports no confidence (TD-09), it selects a recognizer rather than detecting a language (TD-10), and the
+pre-processing ladder has not been shown to buy any accuracy (TD-11). Details and the measurements are in
+[progress.md](docs/progress.md) and [tech-debt.md](docs/project/tech-debt.md).
 
 Commands: `npm test`, `npm run typecheck`, `npm run lint`, `npm run build`, `npm run tauri dev`,
 and in `src-tauri/`: `cargo test`, `cargo clippy --all-targets -- -D warnings`, `cargo fmt`.

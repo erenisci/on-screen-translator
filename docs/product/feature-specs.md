@@ -2,7 +2,7 @@
 title: Feature Specs
 discipline: product
 status: active
-updated: 2026-09-10
+updated: 2026-11-16
 ---
 
 # Feature Specs
@@ -137,10 +137,12 @@ updated: 2026-09-10
    - convert to grayscale,
    - normalize contrast; apply adaptive thresholding when contrast is low.
    Pre-processing is skipped when the region is already large and high-contrast — it costs time and can hurt.
-3. **Recognize** via the engine, returning per line: `text`, `bbox` (frame coordinates), `confidence` (FR-32).
+3. **Recognize** via the engine, returning per line: `text`, `bbox` (frame coordinates), and `confidence` when the
+   engine reports one (FR-32). The Windows engine reports none, so v1 lines carry `null` (TD-09).
 4. **Assemble**: sort lines top-to-bottom, group into blocks by vertical gaps, and join into `full_text` with the
    paragraph structure preserved — because translation quality depends on sentence context, not stray fragments.
-5. **Detect** the source language, unless overridden in Settings (FR-33).
+5. **Resolve** the source language: the recognizer is chosen from the machine's own languages, or from the Settings
+   override, and the language actually used is what gets reported (FR-33, TD-10).
 
 **Edge cases**
 
@@ -148,9 +150,10 @@ updated: 2026-09-10
 | ----------------------------- | ------------------------------------------------------------------------------ |
 | No text found                  | "No text found" in the overlay; overlay stays open to re-select (FR-35)       |
 | OCR language pack missing      | Actionable message + link to the Windows language setting (FR-34)             |
-| Very low confidence lines      | Kept but marked; the panel flags a low-confidence result so a bad translation isn't read as authoritative |
+| Very low confidence lines      | Kept and marked **when the engine reports a confidence**. The v1 engine reports none, so nothing is ever marked in v1 — unknown is rendered as unknown, never as low (TD-09) |
 | Huge selection (a whole 4K screen) | Allowed; a progress indicator appears past ~300 ms                        |
 | Mixed-language region          | One detected language wins for v1; noted as a known limitation                |
+| Two side-by-side columns       | Lines interleave. Assembly is top-to-bottom then left-to-right, and telling a two-column layout from a wide paragraph needs the structure recovery that is out of scope below |
 
 **Out of scope** — vertical scripts, handwriting, table structure recovery, per-word bounding boxes.
 

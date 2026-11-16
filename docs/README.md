@@ -37,7 +37,7 @@ This index is **regenerated** by the acta skills — do not hand-curate the list
 - [Architecture Overview](architecture/overview.md) — components, data flow, tech stack, where the risk lives
 - [System Design](architecture/system-design.md) — how each budget is met, the mechanics, the trade-offs
 - [IPC Contract](architecture/api.md) — the Tauri command and event surface between core and frontend
-- [Architecture Decision Records](architecture/adr/README.md) — the four load-bearing decisions and their alternatives
+- [Architecture Decision Records](architecture/adr/README.md) — the load-bearing decisions and their alternatives
 - [Project Structure](engineering/project-structure.md) — the layout and a "where does this code go?" table
 - [Coding Standards](engineering/coding-standards.md) — patterns, and the project-specific anti-patterns
 - [Naming Conventions](engineering/naming-conventions.md) — files, types, branches, commits, coordinate variables
